@@ -12,6 +12,7 @@
       <div>
         <small>MMPG</small>
         <h1>Remote</h1>
+        <small id="versionLabel" class="version"></small>
       </div>
       <span id="status" class="badge">Desconectado</span>
       <span id="mockBadge" class="badge mock" hidden title="Build de debug (BuildConfig.ALLOW_MOCK)">DEBUG</span>
@@ -63,6 +64,21 @@
       <p class="muted">Redefine a identidade deste app perante todas as TVs. Use apenas se o pareamento estiver com problema — todas as TVs já pareadas precisarão ser pareadas novamente.</p>
       <button class="danger ghost" onclick="resetIdentity()">Redefinir identidade do app</button>
     </section>
+
+    <section class="card debug-log" id="debugLogSection" hidden>
+      <div class="row">
+        <strong>Log</strong>
+        <div class="row compact" style="margin-top:0">
+          <button class="ghost" onclick="copyLog()">Copiar</button>
+          <button class="ghost" onclick="clearLog()">Limpar</button>
+        </div>
+      </div>
+      <pre id="debugLog" class="log"></pre>
+    </section>
+
+    <footer class="app-footer">
+      <a href="https://mmpg.online" target="_blank" rel="noopener">mmpg.online</a>
+    </footer>
   </main>
 
   <dialog id="pairDialog">
@@ -71,7 +87,7 @@
       <p>Digite o código exibido na televisão.</p>
       <input id="pin" inputmode="text" autocomplete="one-time-code" maxlength="12" placeholder="Código da TV" />
       <div class="row">
-        <button value="cancel" class="ghost">Cancelar</button>
+        <button type="button" class="ghost" onclick="cancelPair()">Cancelar</button>
         <button value="default" type="submit">Parear</button>
       </div>
     </form>

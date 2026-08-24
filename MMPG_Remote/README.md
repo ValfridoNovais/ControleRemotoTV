@@ -15,12 +15,13 @@ Projeto-base para um controle remoto Android TV/Google TV, pensado inicialmente 
 
 ## Estado atual
 
-A UI, ponte WebView, descoberta NSD, estrutura de persistência, modelo de dispositivos, comandos e pipelines de build estão estruturados.
+O Android TV Remote Protocol v2 está implementado e **validado contra uma TV Android real** (firmware baseado em UnionTV): descoberta NSD, pareamento com PIN (TLS + protobuf na porta 6467), canal remoto (TLS na porta 6466, heartbeat, D-pad) e envio de comando de tecla foram confirmados funcionando de ponta a ponta. As 9 teclas adicionais (HOME/BACK/POWER/volume/canal/play-pause) estão implementadas com os keycodes oficiais do protocolo, mas ainda pendem de confirmação visual completa numa segunda rodada de teste manual (ver `TESTE_MANUAL_TV_REAL.md`).
 
-**A parte criptográfica/protobuf do Android TV Remote Protocol v2 está deliberadamente isolada em `protocol/` e marcada com TODOs.**
-Isso evita fingir uma implementação "funcional" sem teste real na TCL. O agente deve finalizar essa camada usando uma implementação aberta e compatível como referência, validar o pareamento na porta 6467 e o canal remoto na 6466 e só então remover o modo `NOT_IMPLEMENTED`.
+**Detalhe importante descoberto em teste real:** a identidade TLS do cliente é gerada em **software** (não diretamente no Android Keystore) — em pelo menos um aparelho testado, o hardware seguro (TEE) tinha um bug real na operação de assinatura RSA usada pelo handshake TLS, que nenhum ajuste de parâmetro contornava. A chave privada continua protegida em repouso por criptografia de envelope (AES-256-GCM via Android Keystore). Detalhes técnicos completos em `THIRD_PARTY_NOTICES.md`.
 
-Referências técnicas recomendadas:
+O app **só descobre e controla dispositivos Android TV/Google TV** (que anunciam `_androidtvremote2._tcp` via mDNS) — TVs Samsung (Tizen), LG (WebOS) e similares usam protocolos de controle remoto completamente diferentes e não são suportadas.
+
+Referências técnicas usadas na implementação:
 - https://github.com/tronikos/androidtvremote2
 - https://github.com/louis49/androidtv-remote
 - https://github.com/kud/androidtv-remote
@@ -35,8 +36,9 @@ WebView (assets/index.html)
 TvBridge.kt
         │
         ├── TvDiscovery.kt (NSD/mDNS)
-        ├── CertificateStore.kt
         └── protocol/
+             ├── CertificateStore.kt (identidade RSA em software + AES-Keystore)
+             ├── TlsConnector.kt (handshake TLS compartilhado)
              ├── PairingClient.kt
              ├── RemoteClient.kt
              └── RemoteProtocol.kt

@@ -9,6 +9,7 @@ import android.os.Bundle
 import android.provider.Settings
 import android.util.Log
 import android.webkit.WebChromeClient
+import android.webkit.WebResourceRequest
 import android.webkit.WebView
 import android.webkit.WebViewClient
 import androidx.activity.result.contract.ActivityResultContracts
@@ -34,14 +35,14 @@ class MainActivity : AppCompatActivity() {
         webView = WebView(this)
         setContentView(webView)
 
-        discovery = TvDiscovery(this)
+        discovery = TvDiscovery(this) { msg -> if (::bridge.isInitialized) bridge.emitDiag(msg) }
         bridge = TvBridge(this, webView, discovery, ::requestNearbyWifiPermission)
 
         webView.settings.javaScriptEnabled = true
         webView.settings.domStorageEnabled = true
         webView.settings.allowFileAccess = false
         webView.settings.allowContentAccess = false
-        webView.webViewClient = WebViewClient()
+        webView.webViewClient = ExternalLinkWebViewClient()
         webView.webChromeClient = WebChromeClient()
         webView.addJavascriptInterface(bridge, "MMPGNative")
         webView.loadUrl("file:///android_asset/index.html")
@@ -90,6 +91,27 @@ class MainActivity : AppCompatActivity() {
             data = Uri.fromParts("package", packageName, null)
         }
         startActivity(intent)
+    }
+
+    /**
+     * The app UI is a single local asset (`file:///android_asset/index.html`);
+     * any `http(s)` navigation (e.g. the "mmpg.online" footer link) is an
+     * outbound link, not part of the app, so it's handed to the system
+     * browser instead of loading in place — otherwise it would replace the
+     * remote UI inside this WebView with no way back.
+     */
+    private inner class ExternalLinkWebViewClient : WebViewClient() {
+        override fun shouldOverrideUrlLoading(
+            view: WebView,
+            request: WebResourceRequest
+        ): Boolean {
+            val url = request.url
+            if (url.scheme == "http" || url.scheme == "https") {
+                startActivity(Intent(Intent.ACTION_VIEW, url))
+                return true
+            }
+            return false
+        }
     }
 
     override fun onDestroy() {

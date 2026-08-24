@@ -6,6 +6,17 @@ Este scaffold não incorpora diretamente o código-fonte das implementações de
 - louis49/androidtv-remote — MIT License
 - kud/androidtv-remote — MIT License
 
+Uma dependência de código de terceiros é de fato incorporada (compilada no APK, não apenas consultada como referência):
+
+- **Bouncy Castle** (`org.bouncycastle:bcpkix-jdk18on`) — MIT License —
+  https://www.bouncycastle.org/ — usada em `CertificateStore.kt` só para
+  construir o certificado X.509 autoassinado a partir do par de chaves RSA
+  gerado em software (`JcaX509v3CertificateBuilder` +
+  `JcaContentSignerBuilder`). Necessária porque o Android não expõe uma API
+  pública para gerar um certificado a partir de um `KeyPair` arbitrário fora
+  do fluxo de geração de chave do próprio `AndroidKeyStore` (ver seção
+  "Identidade de cliente em software" abaixo para o porquê da mudança).
+
 Ao incorporar ou adaptar qualquer trecho de código, o agente deve revisar a licença específica da versão utilizada e preservar os avisos exigidos.
 
 ## Pareamento (Android TV Remote Protocol v2) — arquivos consultados
@@ -159,6 +170,31 @@ foram reproduzidos em Kotlin idiomático original):
     apenas para uma eventual funcionalidade futura de pressionar-e-segurar
     com um intervalo real entre as duas mensagens, não para o toque comum
     implementado neste incremento.
+
+## Identidade de cliente em software (diagnóstico em hardware real)
+
+`CertificateStore.kt` originalmente gerava o par de chaves RSA diretamente no
+`AndroidKeyStore` (hardware-backed). Testado ao vivo contra uma TV Android
+real (firmware baseado em UnionTV, confirmado via `openssl s_client
+-connect <ip>:6467 -showcerts`), o handshake TLS na porta 6467 falhava
+consistentemente com `SSLHandshakeException` genérica do BoringSSL/Conscrypt
+("RSA routines: internal error") no momento exato de assinar o
+`CertificateVerify` — independente da versão de TLS negociada (padrão vs.
+TLS 1.2 forçado, mesmo erro) e independente das capacidades declaradas na
+chave (`PKCS#1` sozinho vs. `PKCS#1`+`PSS`, mesmo erro). A chave foi
+confirmada hardware-backed (`KeyInfo.isInsideSecureHardware() == true`).
+Essa combinação — negociação/capacidades corretas, falha só na operação de
+assinatura real do hardware — indica um bug na implementação de assinatura
+RSA do hardware seguro (TEE/Keymaster) deste aparelho específico, não
+corrigível por ajuste de parâmetros na camada de API do Android.
+
+A correção foi gerar o par de chaves RSA em software (JCA padrão, sem
+`AndroidKeyStore` na operação de assinatura), protegendo a chave privada em
+repouso por criptografia de envelope: uma chave AES-256-GCM gerada no
+`AndroidKeyStore` (operação simples e confiável, não implicada na falha)
+cifra os bytes PKCS#8 da chave RSA antes de persistir em
+`SharedPreferences`. A chave privada só existe decifrada em memória durante
+a construção do `KeyManager` de uma única sessão TLS.
 
 Nenhum trecho de código-fonte desses repositórios foi copiado para este
 projeto. `RemoteMessages.kt` reimplementa apenas os fatos de protocolo acima

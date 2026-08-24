@@ -1,8 +1,8 @@
 # Checklist de teste manual na TV real (Prompt 7)
 
-Este checklist substitui a execução automática do Prompt 7 de `PROMPTS_AGENT.md`, que exige um celular e a SEMP TCL 32S615 (ou outra Android TV/Google TV) na mesma rede Wi-Fi — algo que nenhum agente consegue fazer sozinho. Use-o você mesmo, na ordem, depois de instalar o APK debug (gerado pelo workflow `Build Debug APK` do GitHub Actions).
+Este checklist substitui a execução automática do Prompt 7 de `PROMPTS_AGENT.md`, que exige um celular e a SEMP TCL 32S615 (ou outra Android TV/Google TV) na mesma rede Wi-Fi — algo que nenhum agente consegue fazer sozinho. Use-o você mesmo, na ordem, depois de instalar o APK debug.
 
-Todo o código abaixo já foi implementado e revisado (Prompts 2–6), mas **nunca foi executado contra uma TV real** — é esperado que o primeiro teste real revele ajustes finos que só aparecem em hardware de verdade.
+> **Atualização 2026-08-24:** as etapas 1–3 abaixo já foram validadas contra uma Android TV real (TCL, firmware UnionTV, "THAISE TV") — descoberta, pareamento com PIN e conexão do canal remoto com envio de tecla confirmados funcionando. No caminho, dois bugs reais foram encontrados e corrigidos (porta de pareamento errada, e um bug de assinatura RSA no hardware seguro daquele aparelho — ver `CHANGELOG.md` [1.0.1] e `THIRD_PARTY_NOTICES.md`). As etapas 4–6 (D-pad completo e as 9 teclas restantes, especialmente POWER/VOLUME) ainda precisam de confirmação visual — use o painel de "Log" na própria UI (visível em build debug) em vez de `adb logcat` se preferir não usar ADB.
 
 ## Antes de começar
 

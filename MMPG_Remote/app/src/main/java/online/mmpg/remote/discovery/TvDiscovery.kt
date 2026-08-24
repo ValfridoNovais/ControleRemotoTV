@@ -23,7 +23,15 @@ import online.mmpg.remote.protocol.RemoteProtocol
  * No IP/host is ever hardcoded here: every [TvDevice] comes from mDNS
  * discovery + resolve.
  */
-class TvDiscovery(context: Context) {
+class TvDiscovery(
+    context: Context,
+    /**
+     * Mirrors every [Log] call below to the caller — used to surface a live,
+     * in-app diagnostic feed (see [online.mmpg.remote.TvBridge]) for testing
+     * on a device with no ADB/logcat access available.
+     */
+    private val onDiag: (String) -> Unit = {}
+) {
     private val nsd = context.applicationContext.getSystemService(Context.NSD_SERVICE) as NsdManager
     private val registry = TvDeviceRegistry()
     private var callback: ((List<TvDevice>) -> Unit)? = null
@@ -31,24 +39,32 @@ class TvDiscovery(context: Context) {
     @Volatile
     private var active = false
 
+    private fun logI(msg: String) { Log.i(TAG, msg); onDiag(msg) }
+    private fun logD(msg: String) { Log.d(TAG, msg); onDiag(msg) }
+    private fun logW(msg: String) { Log.w(TAG, msg); onDiag(msg) }
+    private fun logE(msg: String) { Log.e(TAG, msg); onDiag(msg) }
+
     private val discoveryListener = object : NsdManager.DiscoveryListener {
         override fun onDiscoveryStarted(serviceType: String) {
             active = true
-            Log.i(TAG, "Discovery started")
+            logI("NSD: discovery iniciada para $serviceType")
         }
 
         override fun onServiceFound(service: NsdServiceInfo) {
-            if (!service.serviceType.contains(SERVICE_TYPE_FRAGMENT)) return
-            Log.d(TAG, "Service found, resolving")
+            if (!service.serviceType.contains(SERVICE_TYPE_FRAGMENT)) {
+                logD("NSD: serviço ignorado (tipo diferente): ${service.serviceType}")
+                return
+            }
+            logD("NSD: serviço encontrado \"${service.serviceName}\", resolvendo…")
             nsd.resolveService(service, object : NsdManager.ResolveListener {
                 override fun onResolveFailed(serviceInfo: NsdServiceInfo, errorCode: Int) {
-                    Log.w(TAG, "Resolve failed (errorCode=$errorCode)")
+                    logW("NSD: falha ao resolver \"${serviceInfo.serviceName}\" (errorCode=$errorCode)")
                 }
 
                 override fun onServiceResolved(resolved: NsdServiceInfo) {
                     val host = resolved.host?.hostAddress
                     if (host.isNullOrBlank()) {
-                        Log.w(TAG, "Resolved service without a usable host address")
+                        logW("NSD: \"${resolved.serviceName}\" resolvido sem endereço IP utilizável")
                         return
                     }
                     val device = TvDevice(
@@ -56,7 +72,7 @@ class TvDiscovery(context: Context) {
                         host = host,
                         port = resolved.port.takeIf { it > 0 } ?: RemoteProtocol.DEFAULT_PAIRING_PORT
                     )
-                    Log.i(TAG, "Service resolved (port=${device.port})")
+                    logI("NSD: resolvido \"${device.name}\" em ${device.host}:${device.port}")
                     val snapshot = registry.upsert(resolved.serviceName, device)
                     callback?.invoke(snapshot)
                 }
@@ -67,29 +83,29 @@ class TvDiscovery(context: Context) {
             // NsdServiceInfo on service-lost doesn't reliably carry a resolved
             // host, but the service name is always present and is what devices
             // are keyed by in the registry, so removal still works correctly.
-            Log.i(TAG, "Service lost")
+            logI("NSD: serviço perdido \"${service.serviceName}\"")
             val snapshot = registry.remove(service.serviceName)
             callback?.invoke(snapshot)
         }
 
         override fun onDiscoveryStopped(serviceType: String) {
             active = false
-            Log.i(TAG, "Discovery stopped")
+            logI("NSD: discovery parada")
         }
 
         override fun onStartDiscoveryFailed(serviceType: String, errorCode: Int) {
             active = false
-            Log.w(TAG, "Start discovery failed (errorCode=$errorCode)")
+            logW("NSD: falha ao iniciar discovery (errorCode=$errorCode)")
             try {
                 nsd.stopServiceDiscovery(this)
             } catch (e: Exception) {
-                Log.w(TAG, "Cleanup after failed start threw: ${e.javaClass.simpleName}")
+                logW("NSD: limpeza após falha de início lançou ${e.javaClass.simpleName}")
             }
         }
 
         override fun onStopDiscoveryFailed(serviceType: String, errorCode: Int) {
             active = false
-            Log.w(TAG, "Stop discovery failed (errorCode=$errorCode)")
+            logW("NSD: falha ao parar discovery (errorCode=$errorCode)")
         }
     }
 
@@ -103,17 +119,18 @@ class TvDiscovery(context: Context) {
     fun start(onUpdate: (List<TvDevice>) -> Unit) {
         callback = onUpdate
         if (active) {
-            Log.d(TAG, "start() called while already active; replaying current snapshot")
+            logD("NSD: start() chamado com scan já ativo; reenviando snapshot atual (${registry.snapshot().size} dispositivo(s))")
             callback?.invoke(registry.snapshot())
             return
         }
         registry.clear()
+        logD("NSD: chamando discoverServices($SERVICE_TYPE)")
         try {
             nsd.discoverServices(SERVICE_TYPE, NsdManager.PROTOCOL_DNS_SD, discoveryListener)
         } catch (e: IllegalArgumentException) {
             // Thrown by NsdManager if the listener is already registered; our
             // `active` flag should prevent this, but never crash the bridge on it.
-            Log.e(TAG, "discoverServices threw: ${e.javaClass.simpleName}")
+            logE("NSD: discoverServices lançou ${e.javaClass.simpleName}")
         }
     }
 
@@ -123,7 +140,7 @@ class TvDiscovery(context: Context) {
         try {
             nsd.stopServiceDiscovery(discoveryListener)
         } catch (e: Exception) {
-            Log.w(TAG, "stopServiceDiscovery threw: ${e.javaClass.simpleName}")
+            logW("NSD: stopServiceDiscovery lançou ${e.javaClass.simpleName}")
         } finally {
             active = false
         }

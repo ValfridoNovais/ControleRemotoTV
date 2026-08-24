@@ -5,6 +5,103 @@ Este projeto ainda não segue Semantic Versioning à risca (é um app cliente se
 API pública), mas o `versionName`/`versionCode` em `app/build.gradle.kts`
 seguem o padrão `MAJOR.MINOR.PATCH`.
 
+## [1.0.1] — 2026-08-24
+
+Primeira validação real contra hardware: uma Android TV de verdade (TCL,
+firmware baseado em UnionTV, nome de rede "THAISE TV"). Descoberta,
+pareamento com PIN, conexão do canal remoto e envio de comando de tecla
+foram confirmados funcionando de ponta a ponta pela primeira vez.
+
+### Corrigido
+
+- **Bug real de threading/ordem em `doPair()`/`openPair()`** (`app.js`): o
+  pareamento pedia o PIN ao usuário *antes* de sequer conectar na TV — mas a
+  TV só exibe o PIN depois que a conexão de pareamento é aberta. Dividido em
+  duas chamadas nativas novas, `beginPairing(host, port)` (conecta e negocia
+  até a TV mostrar o PIN) e `submitPairingPin(host, pin)` (envia o desafio
+  calculado com o PIN digitado) — ver `PairingClient.kt`
+  (`beginPairing`/`submitPin`/`cancelPairing`, com uma sessão TLS mantida
+  aberta entre as duas chamadas).
+- **Porta de pareamento errada**: `doPair()` usava a porta anunciada pelo
+  mDNS (`d.port`, que é a porta do canal remoto, 6466) para o pareamento em
+  vez da porta fixa 6467 do protocolo — a TV nunca recebia a tentativa de
+  pareamento na porta certa. Corrigido para sempre usar 6467.
+- **Botão "Cancelar" do diálogo de pareamento não fechava a janela**: por
+  não ter `type="button"`, o clique disparava o mesmo `onsubmit` do botão
+  "Parear" com PIN vazio, que retornava cedo sem chamar `.close()`. Corrigido
+  com `type="button"` e uma função `cancelPair()` dedicada.
+- **TV encontrada não ficava selecionada automaticamente**: com exatamente
+  uma TV na lista, "Parear"/"Conectar" mostravam só um aviso discreto de
+  "selecione uma TV" em vez de agir. `renderDevices()` agora seleciona
+  automaticamente quando há uma única TV (ou reseleciona a mesma TV de
+  antes, se ainda estiver na lista).
+- **Identidade TLS do cliente incompatível com hardware real**: em pelo
+  menos um aparelho testado, a chave RSA gerada no Android Keystore
+  (hardware-backed) fazia o handshake TLS falhar sempre com
+  `SSLHandshakeException` ("RSA routines: internal error" do
+  BoringSSL/Conscrypt) no momento de assinar o `CertificateVerify` —
+  independente de versão de TLS ou padding/digest declarado. Diagnosticado
+  com um teste A/B controlado (chave AndroidKeystore vs. chave gerada em
+  software); a chave em software completou o handshake normalmente,
+  confirmando um bug na implementação de assinatura RSA do hardware seguro
+  (TEE) deste aparelho. `CertificateStore.kt` agora gera a identidade em
+  software (RSA-2048 via JCA padrão + certificado autoassinado via Bouncy
+  Castle), protegida em repouso por criptografia de envelope AES-256-GCM
+  (essa sim via Android Keystore). Ver `THIRD_PARTY_NOTICES.md` para os
+  detalhes completos do diagnóstico.
+
+### Adicionado
+
+- **Ícone do app**: launcher icon substituído duas vezes ao longo desta
+  sessão de testes, culminando num ícone temático dedicado (controle remoto
+  3D sobre fundo com a marca MMPG), gerado em todas as densidades
+  (legado + adaptativo, `mipmap-*`).
+- **Painel de log em tempo real na UI** (visível só em build debug, seção
+  "Log"): todo evento relevante da esteira nativa (discovery, pareamento,
+  conexão, erros) é espelhado no próprio app via um novo evento `diag`, com
+  botões "Copiar"/"Limpar" — permite depurar em campo sem precisar de
+  ADB/logcat.
+- **Versão exclusiva por build debug**: `versionNameSuffix` com timestamp
+  (`-D<data.hora>`), exibida no cabeçalho da UI, para diferenciar
+  instalações de teste consecutivas.
+- **Link de contato** (`mmpg.online`) no rodapé da UI, abrindo no navegador
+  do sistema (não na WebView do app) via um `WebViewClient` que intercepta
+  navegação para `http(s)://`.
+- **`TlsConnector.kt`**: handshake TLS compartilhado entre `PairingClient` e
+  `RemoteClient`, com fallback automático (não estático) para TLS 1.2 caso a
+  negociação padrão encontre a falha de assinatura RSA descrita acima —
+  nunca força uma versão de TLS mais antiga por padrão.
+
+### Removido
+
+- Wrapper de diagnóstico `LoggingKeyManager` e o log detalhado de
+  `privateKey.class`/`format`/paddings usados durante a investigação do bug
+  de TLS — eram ruído depois que a causa raiz foi identificada e corrigida;
+  removidos para manter os logs de operação normal enxutos.
+
+### Pendências conhecidas (atualização)
+
+- **Confirmado em hardware real**: descoberta, pareamento com PIN, conexão
+  do canal remoto e envio de comando de tecla (`KEY_SENT`) — a ressalva
+  "nenhuma validação em hardware real" do `[1.0.0]` não se aplica mais a
+  esses pontos.
+- **Ainda pendente**: confirmação visual de que cada uma das 14 teclas
+  produz o efeito esperado na tela (D-pad completo, HOME/BACK, e
+  principalmente POWER/VOLUME/MUTE — ver ressalva já registrada no
+  `[1.0.0]` sobre o bitmask `Feature.SUPPORTED` não declarar os bits
+  POWER/VOLUME).
+- `MissingApplicationIcon` (lint, registrado em `[1.0.0]`) está resolvido —
+  ver ícone adicionado nesta versão. Em troca, o lint passou a reportar 4
+  avisos novos, todos cosméticos e esperados de um ícone gerado por script a
+  partir de uma única imagem (não desenhado nativamente para cada variante):
+  `IconLauncherShape` (10 — a silhueta do ícone legado não segue as formas
+  recomendadas), `MonochromeLauncherIcon` (2 — falta a variante monocromática
+  temática do Android 13+), `IconDuplicates` (5 — a variante "round" é
+  idêntica à quadrada em cada densidade) e `ObsoleteSdkInt` (1, pré-existente,
+  não relacionado ao ícone). Nenhum é um erro de build; ficam registrados
+  para uma futura passada de design dedicada ao ícone (variante monocromática
+  de verdade, silhueta redonda recortada à mão).
+
 ## [1.0.0] — 2026-08-23
 
 Primeira versão "completa" do MMPG Remote: toda a esteira de prompts

@@ -27,7 +27,7 @@ class TvBridge(
 ) {
     private val appContext = context.applicationContext
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
-    private val remoteService = AndroidTvRemoteService(context)
+    private val remoteService = AndroidTvRemoteService(context) { msg -> emitDiag(msg) }
 
     // Set when startDiscovery() had to defer to a runtime permission request;
     // consumed by notifyPermissionResult() to auto-resume the scan once the
@@ -45,6 +45,7 @@ class TvBridge(
     fun startDiscovery() {
         if (!hasNearbyWifiPermission()) {
             Log.i(TAG, "Discovery requested without NEARBY_WIFI_DEVICES; requesting permission first")
+            emitDiag("Permissão NEARBY_WIFI_DEVICES ausente; solicitando antes de buscar")
             discoveryPendingPermission = true
             // @JavascriptInterface methods run on the WebView's private background
             // thread, not the UI thread. requestNearbyWifiPermission() ultimately
@@ -54,6 +55,7 @@ class TvBridge(
             webView.post { requestNearbyWifiPermission() }
             return
         }
+        emitDiag("Permissão ok; chamando TvDiscovery.start()")
         discovery.start { devices -> publishDevices(devices) }
     }
 
@@ -76,16 +78,39 @@ class TvBridge(
         ) == PackageManager.PERMISSION_GRANTED
     }
 
+    /**
+     * Steps 1-6 of pairing (see [AndroidTvRemoteService.beginPairing]): the TV
+     * only displays its PIN after this succeeds, so the UI must call this
+     * BEFORE it can know what PIN to ask the user for - it cannot be combined
+     * with [submitPairingPin] into a single call.
+     */
     @JavascriptInterface
-    fun pair(host: String, port: Int, pin: String) {
+    fun beginPairing(host: String, port: Int) {
+        emitDiag("Conectando para parear com $host:$port…")
         scope.launch {
-            val result = remoteService.pair(host, port, pin)
+            val result = remoteService.beginPairing(host, port)
+            emit("beginPairingResult", result)
+        }
+    }
+
+    @JavascriptInterface
+    fun submitPairingPin(host: String, pin: String) {
+        emitDiag("Enviando PIN para $host…")
+        scope.launch {
+            val result = remoteService.submitPairingPin(host, pin)
             emit("pairResult", result)
         }
     }
 
     @JavascriptInterface
+    fun cancelPairing() {
+        emitDiag("Pareamento cancelado pelo usuário")
+        remoteService.cancelPairing()
+    }
+
+    @JavascriptInterface
     fun connect(host: String) {
+        emitDiag("Conectando ao canal remoto de $host…")
         scope.launch {
             val result = remoteService.connect(host)
             emit("connectResult", result)
@@ -143,6 +168,15 @@ class TvBridge(
         }
         emit("devices", arr.toString())
     }
+
+    /**
+     * Forwards a human-readable lifecycle message to the WebView's in-app
+     * debug log (visible only in debug builds — see `app.js#initMockIndicator`).
+     * This exists so pairing/discovery can be diagnosed on a real device with
+     * no ADB/logcat access: every message is also a plain [Log] call, never
+     * anything sensitive (no PIN, no key/certificate bytes).
+     */
+    fun emitDiag(message: String) = emit("diag", message)
 
     private fun emit(event: String, json: String) {
         val safeEvent = JSONObject.quote(event)

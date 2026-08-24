@@ -13,11 +13,8 @@ import online.mmpg.remote.BuildConfig
 import java.io.IOException
 import java.io.InputStream
 import java.io.OutputStream
-import java.net.InetSocketAddress
 import java.net.Socket
 import java.net.SocketTimeoutException
-import java.security.SecureRandom
-import javax.net.ssl.SSLContext
 import javax.net.ssl.SSLException
 import javax.net.ssl.SSLSocket
 
@@ -84,7 +81,15 @@ import javax.net.ssl.SSLSocket
  * guarded by object identity so a stale, already-superseded connection's
  * cleanup can never clobber a newer, already-established one.
  */
-class RemoteClient(private val certificateStore: CertificateStore) {
+class RemoteClient(
+    private val certificateStore: CertificateStore,
+    /** Mirrors lifecycle/error messages for an in-app diagnostic log; see [online.mmpg.remote.TvBridge]. */
+    private val onDiag: (String) -> Unit = {}
+) {
+    private fun logI(msg: String) { Log.i(TAG, msg); onDiag(msg) }
+    private fun logW(msg: String) { Log.w(TAG, msg); onDiag(msg) }
+    private fun logE(msg: String, e: Throwable) { Log.e(TAG, msg, e); onDiag("$msg (${e.javaClass.simpleName}: ${e.message})") }
+
     private val ioScope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
     private val stateLock = Any()
     private val writeLock = Any()
@@ -100,27 +105,17 @@ class RemoteClient(private val certificateStore: CertificateStore) {
         close() // reconnection safety: never leave a previous socket/job behind.
         var pendingSocket: Socket? = null
         try {
-            Log.i(TAG, "Conectando ao canal remoto ${RemoteProtocol.DEFAULT_REMOTE_PORT} de $host")
-            val sslContext = SSLContext.getInstance("TLS")
-            sslContext.init(
-                certificateStore.getKeyManagers(),
-                arrayOf(AcceptAnyServerTrustManager),
-                SecureRandom()
+            logI("Conectando ao canal remoto ${RemoteProtocol.DEFAULT_REMOTE_PORT} de $host")
+            val sslSocket = TlsConnector.connect(
+                host = host,
+                port = RemoteProtocol.DEFAULT_REMOTE_PORT,
+                keyManagers = certificateStore.getKeyManagers(),
+                trustManagers = arrayOf(AcceptAnyServerTrustManager),
+                connectTimeoutMs = CONNECT_TIMEOUT_MS,
+                handshakeTimeoutMs = HANDSHAKE_TIMEOUT_MS,
+                onDiag = ::logI
             )
-
-            val plainSocket = Socket()
-            plainSocket.connect(
-                InetSocketAddress(host, RemoteProtocol.DEFAULT_REMOTE_PORT),
-                CONNECT_TIMEOUT_MS
-            )
-            pendingSocket = plainSocket
-            val sslSocket = sslContext.socketFactory.createSocket(
-                plainSocket, host, RemoteProtocol.DEFAULT_REMOTE_PORT, true
-            ) as SSLSocket
             pendingSocket = sslSocket
-            sslSocket.soTimeout = HANDSHAKE_TIMEOUT_MS
-            sslSocket.startHandshake()
-            Log.i(TAG, "Handshake TLS do canal remoto concluído com $host")
 
             val input = sslSocket.inputStream
             val out = sslSocket.outputStream
@@ -133,22 +128,22 @@ class RemoteClient(private val certificateStore: CertificateStore) {
                 connectedHost = host
                 readJob = ioScope.launch { readLoop(sslSocket, input) }
             }
-            Log.i(TAG, "Canal remoto pronto para enviar comandos a $host")
+            logI("Canal remoto pronto para enviar comandos a $host")
             ProtocolResult(true, "CONNECTED", "Canal remoto conectado.")
         } catch (e: SocketTimeoutException) {
-            Log.w(TAG, "Timeout ao inicializar canal remoto com $host: ${e.message}")
+            logW("Timeout ao inicializar canal remoto com $host: ${e.message}")
             closeQuietly(pendingSocket)
             ProtocolResult(false, "TIMEOUT", "A TV não respondeu a tempo no canal remoto.")
         } catch (e: SSLException) {
-            Log.w(TAG, "Erro TLS no canal remoto com $host: ${e.message}")
+            logE("Erro TLS no canal remoto com $host", e)
             closeQuietly(pendingSocket)
             ProtocolResult(false, "TLS_ERROR", "Falha na conexão segura com a TV.")
         } catch (e: IOException) {
-            Log.w(TAG, "Erro de rede no canal remoto com $host: ${e.message}")
+            logE("Erro de rede no canal remoto com $host", e)
             closeQuietly(pendingSocket)
             ProtocolResult(false, "CONNECTION_ERROR", "Não foi possível conectar ao canal remoto da TV.")
         } catch (e: Exception) {
-            Log.e(TAG, "Erro inesperado ao conectar ao canal remoto de $host", e)
+            logE("Erro inesperado ao conectar ao canal remoto de $host", e)
             closeQuietly(pendingSocket)
             ProtocolResult(false, "REMOTE_ERROR", "Falha inesperada ao conectar ao canal remoto.")
         }
