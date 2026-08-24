@@ -1,0 +1,83 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
+  <title>MMPG Remote</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <main class="app">
+    <header>
+      <div>
+        <small>MMPG</small>
+        <h1>Remote</h1>
+      </div>
+      <span id="status" class="badge">Desconectado</span>
+      <span id="mockBadge" class="badge mock" hidden title="Build de debug (BuildConfig.ALLOW_MOCK)">DEBUG</span>
+    </header>
+
+    <section class="card">
+      <div class="row">
+        <strong>Televisão</strong>
+        <button class="ghost" onclick="discover()">Procurar</button>
+      </div>
+      <select id="deviceSelect">
+        <option value="">Nenhuma TV selecionada</option>
+      </select>
+      <div class="row compact">
+        <button onclick="openPair()">Parear</button>
+        <button onclick="connectTv()">Conectar</button>
+        <button class="danger ghost" onclick="forgetTv()">Esquecer</button>
+      </div>
+      <p id="deviceInfo" class="muted">Celular e TV devem estar na mesma Wi‑Fi.</p>
+    </section>
+
+    <section class="remote">
+      <div class="top-actions">
+        <button class="round power" onclick="key('POWER')">⏻</button>
+        <button class="pill" onclick="key('HOME')">Home</button>
+        <button class="pill" onclick="key('BACK')">Voltar</button>
+      </div>
+
+      <div class="dpad">
+        <button class="up" onclick="key('UP')">▲</button>
+        <button class="left" onclick="key('LEFT')">◀</button>
+        <button class="ok" onclick="key('ENTER')">OK</button>
+        <button class="right" onclick="key('RIGHT')">▶</button>
+        <button class="down" onclick="key('DOWN')">▼</button>
+      </div>
+
+      <div class="grid">
+        <button onclick="key('VOLUME_UP')">VOL +</button>
+        <button onclick="key('CHANNEL_UP')">CH +</button>
+        <button onclick="key('MUTE')">Mudo</button>
+        <button onclick="key('PLAY_PAUSE')">▶︎ ❚❚</button>
+        <button onclick="key('VOLUME_DOWN')">VOL −</button>
+        <button onclick="key('CHANNEL_DOWN')">CH −</button>
+      </div>
+    </section>
+
+    <section class="card advanced">
+      <strong>Avançado</strong>
+      <p class="muted">Redefine a identidade deste app perante todas as TVs. Use apenas se o pareamento estiver com problema — todas as TVs já pareadas precisarão ser pareadas novamente.</p>
+      <button class="danger ghost" onclick="resetIdentity()">Redefinir identidade do app</button>
+    </section>
+  </main>
+
+  <dialog id="pairDialog">
+    <form method="dialog" onsubmit="return doPair(event)">
+      <h3>Parear TV</h3>
+      <p>Digite o código exibido na televisão.</p>
+      <input id="pin" inputmode="text" autocomplete="one-time-code" maxlength="12" placeholder="Código da TV" />
+      <div class="row">
+        <button value="cancel" class="ghost">Cancelar</button>
+        <button value="default" type="submit">Parear</button>
+      </div>
+    </form>
+  </dialog>
+
+  <div id="toast"></div>
+  <script src="app.js"></script>
+</body>
+</html>
