@@ -8,6 +8,14 @@ on:
 jobs:
   build:
     runs-on: ubuntu-latest
+    # O projeto Android (gradlew, app/, etc.) fica em MMPG_Remote/, não na
+    # raiz do repositório — sem isso todo "run:" abaixo executaria no lugar
+    # errado (era exatamente esse o bug que impedia o GitHub de sequer
+    # reconhecer este arquivo como workflow, antes de mover pra .github/
+    # na raiz).
+    defaults:
+      run:
+        working-directory: MMPG_Remote
     steps:
       - uses: actions/checkout@v4
 
@@ -23,20 +31,22 @@ jobs:
           gradle-version: "8.10.2"
 
       - name: Run unit tests
+        working-directory: MMPG_Remote
         run: gradle --no-daemon test
 
       - name: Build debug APK
+        working-directory: MMPG_Remote
         run: gradle --no-daemon assembleDebug
 
       - name: Upload APK
         uses: actions/upload-artifact@v4
         with:
           name: MMPG-Remote-debug
-          path: app/build/outputs/apk/debug/*.apk
+          path: MMPG_Remote/app/build/outputs/apk/debug/*.apk
 
       - name: Upload test reports
         if: failure()
         uses: actions/upload-artifact@v4
         with:
           name: MMPG-Remote-test-reports
-          path: app/build/reports/tests/
+          path: MMPG_Remote/app/build/reports/tests/

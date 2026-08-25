@@ -6,6 +6,15 @@ on:
 jobs:
   release:
     runs-on: ubuntu-latest
+    # O projeto Android fica em MMPG_Remote/, não na raiz do repositório.
+    # O default de job abaixo cobre a maioria dos steps, mas cada "run:"
+    # também recebe "working-directory" explícito — não custa nada e evita
+    # depender só do default caso algum runner/versão do Actions não o
+    # respeite (foi exatamente esse comportamento observado num teste real:
+    # "gradle test" rodou na raiz do repo mesmo com o default configurado).
+    defaults:
+      run:
+        working-directory: MMPG_Remote
     steps:
       - uses: actions/checkout@v4
 
@@ -21,6 +30,7 @@ jobs:
           gradle-version: "8.10.2"
 
       - name: Run unit tests
+        working-directory: MMPG_Remote
         run: gradle --no-daemon test
 
       - name: Upload test reports
@@ -28,7 +38,7 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: MMPG-Remote-test-reports
-          path: app/build/reports/tests/
+          path: MMPG_Remote/app/build/reports/tests/
 
       - name: Verify signing secrets are configured
         shell: bash
@@ -56,6 +66,7 @@ jobs:
           echo "$KEYSTORE_B64" | base64 --decode > "$RUNNER_TEMP/mmpg-remote.keystore"
 
       - name: Build signed release (AAB + APK)
+        working-directory: MMPG_Remote
         env:
           ANDROID_KEYSTORE_FILE: ${{ runner.temp }}/mmpg-remote.keystore
           ANDROID_KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
@@ -67,6 +78,7 @@ jobs:
         run: gradle --no-daemon assembleRelease bundleRelease
 
       - name: Verify APK signature
+        working-directory: MMPG_Remote
         shell: bash
         run: |
           APK=$(find app/build/outputs/apk/release -name "*.apk" | head -n 1)
@@ -75,6 +87,7 @@ jobs:
           "$APKSIGNER" verify --verbose "$APK"
 
       - name: Verify AAB signature
+        working-directory: MMPG_Remote
         shell: bash
         run: |
           AAB=$(find app/build/outputs/bundle/release -name "*.aab" | head -n 1)
@@ -87,13 +100,13 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: MMPG-Remote-release-apk
-          path: app/build/outputs/apk/release/*.apk
+          path: MMPG_Remote/app/build/outputs/apk/release/*.apk
 
       - name: Upload release AAB
         uses: actions/upload-artifact@v4
         with:
           name: MMPG-Remote-release-aab
-          path: app/build/outputs/bundle/release/*.aab
+          path: MMPG_Remote/app/build/outputs/bundle/release/*.aab
 
       - name: Cleanup keystore
         if: always()
