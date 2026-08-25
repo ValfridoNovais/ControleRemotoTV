@@ -5,81 +5,163 @@
   <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
   <title>MMPG Remote</title>
   <link rel="stylesheet" href="style.css" />
+  <link rel="stylesheet" href="paywall.css" />
 </head>
 <body>
   <main class="app">
-    <header>
-      <div>
-        <small>MMPG</small>
-        <h1>Remote</h1>
-        <small id="versionLabel" class="version"></small>
-      </div>
-      <span id="status" class="badge">Desconectado</span>
-      <span id="mockBadge" class="badge mock" hidden title="Build de debug (BuildConfig.ALLOW_MOCK)">DEBUG</span>
-    </header>
-
-    <section class="card">
-      <div class="row">
-        <strong>Televisão</strong>
-        <button class="ghost" onclick="discover()">Procurar</button>
-      </div>
-      <select id="deviceSelect">
-        <option value="">Nenhuma TV selecionada</option>
-      </select>
-      <div class="row compact">
-        <button onclick="openPair()">Parear</button>
-        <button onclick="connectTv()">Conectar</button>
-        <button class="danger ghost" onclick="forgetTv()">Esquecer</button>
-      </div>
-      <p id="deviceInfo" class="muted">Celular e TV devem estar na mesma Wi‑Fi.</p>
-    </section>
-
-    <section class="remote">
-      <div class="top-actions">
-        <button class="round power" onclick="key('POWER')">⏻</button>
-        <button class="pill" onclick="key('HOME')">Home</button>
-        <button class="pill" onclick="key('BACK')">Voltar</button>
-      </div>
-
-      <div class="dpad">
-        <button class="up" onclick="key('UP')">▲</button>
-        <button class="left" onclick="key('LEFT')">◀</button>
-        <button class="ok" onclick="key('ENTER')">OK</button>
-        <button class="right" onclick="key('RIGHT')">▶</button>
-        <button class="down" onclick="key('DOWN')">▼</button>
-      </div>
-
-      <div class="grid">
-        <button onclick="key('VOLUME_UP')">VOL +</button>
-        <button onclick="key('CHANNEL_UP')">CH +</button>
-        <button onclick="key('MUTE')">Mudo</button>
-        <button onclick="key('PLAY_PAUSE')">▶︎ ❚❚</button>
-        <button onclick="key('VOLUME_DOWN')">VOL −</button>
-        <button onclick="key('CHANNEL_DOWN')">CH −</button>
-      </div>
-    </section>
-
-    <section class="card advanced">
-      <strong>Avançado</strong>
-      <p class="muted">Redefine a identidade deste app perante todas as TVs. Use apenas se o pareamento estiver com problema — todas as TVs já pareadas precisarão ser pareadas novamente.</p>
-      <button class="danger ghost" onclick="resetIdentity()">Redefinir identidade do app</button>
-    </section>
-
-    <section class="card debug-log" id="debugLogSection" hidden>
-      <div class="row">
-        <strong>Log</strong>
-        <div class="row compact" style="margin-top:0">
-          <button class="ghost" onclick="copyLog()">Copiar</button>
-          <button class="ghost" onclick="clearLog()">Limpar</button>
+    <header class="app-header">
+      <div class="brand-lockup">
+        <img src="logo_mmpg_remoto.jpg" alt="MMPG Remote" class="app-logo">
+        <div>
+          <small>MMPG</small>
+          <h1>Remote</h1>
+          <small id="versionLabel" class="version"></small>
         </div>
       </div>
-      <pre id="debugLog" class="log"></pre>
-    </section>
+      <div class="header-status">
+        <span id="status" class="badge">Desconectado</span>
+        <span id="mockBadge" class="badge mock" hidden title="Build de debug (BuildConfig.ALLOW_MOCK)">DEBUG</span>
+      </div>
+    </header>
 
-    <footer class="app-footer">
-      <a href="https://mmpg.online" target="_blank" rel="noopener">mmpg.online</a>
-    </footer>
+    <div class="view" id="view-remote">
+      <section class="card tv-card">
+        <div class="row">
+          <div>
+            <strong>Televisão</strong>
+            <p class="section-hint">Escolha uma TV encontrada na sua rede local.</p>
+          </div>
+          <button class="ghost discover-btn" onclick="discover()">Procurar</button>
+        </div>
+        <select id="deviceSelect" aria-label="TV selecionada">
+          <option value="">Nenhuma TV selecionada</option>
+        </select>
+        <div id="deviceCards" class="device-cards" aria-live="polite"></div>
+        <div class="row compact tv-actions">
+          <button onclick="openPair()">Parear</button>
+          <button onclick="connectTv()">Conectar</button>
+          <button class="danger ghost" onclick="forgetTv()">Esquecer</button>
+        </div>
+        <p id="deviceInfo" class="muted">Celular e TV devem estar na mesma Wi‑Fi.</p>
+      </section>
+
+      <section class="remote">
+        <div class="remote-head">
+          <div>
+            <strong>Controle</strong>
+            <p class="section-hint">14 comandos compatíveis com o app atual.</p>
+          </div>
+          <button class="round power" onclick="key('POWER')" aria-label="Ligar/desligar"><span class="power-icon"></span></button>
+        </div>
+
+        <div class="top-actions">
+          <button class="pill pill-home" onclick="key('HOME')"><span>⌂</span>Home</button>
+          <button class="pill pill-back" onclick="key('BACK')"><span>↩</span>Voltar</button>
+        </div>
+
+        <div class="dpad">
+          <button class="up" onclick="key('UP')" aria-label="Cima"><span>▲</span></button>
+          <button class="left" onclick="key('LEFT')" aria-label="Esquerda"><span>◀</span></button>
+          <button class="ok" onclick="key('ENTER')">OK</button>
+          <button class="right" onclick="key('RIGHT')" aria-label="Direita"><span>▶</span></button>
+          <button class="down" onclick="key('DOWN')" aria-label="Baixo"><span>▼</span></button>
+        </div>
+
+        <div class="remote-groups">
+          <div class="remote-group">
+            <span class="group-label">Volume</span>
+            <div class="grid grid-three">
+              <button class="fn-volume" onclick="key('VOLUME_DOWN')"><span>−</span>Vol</button>
+              <button class="fn-mute" onclick="key('MUTE')"><span>●</span>Mudo</button>
+              <button class="fn-volume" onclick="key('VOLUME_UP')"><span>+</span>Vol</button>
+            </div>
+          </div>
+          <div class="remote-group">
+            <span class="group-label">Canais e mídia</span>
+            <div class="grid grid-three">
+              <button class="fn-channel" onclick="key('CHANNEL_DOWN')"><span>−</span>CH</button>
+              <button class="fn-play" onclick="key('PLAY_PAUSE')"><span>▶</span>Pausar</button>
+              <button class="fn-channel" onclick="key('CHANNEL_UP')"><span>+</span>CH</button>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section class="card advanced">
+        <strong>Avançado</strong>
+        <p class="muted">Redefine a identidade deste app perante todas as TVs. Use apenas se o pareamento estiver com problema — todas as TVs já pareadas precisarão ser pareadas novamente.</p>
+        <button class="danger ghost" onclick="resetIdentity()">Redefinir identidade do app</button>
+      </section>
+
+      <section class="card debug-log" id="debugLogSection" hidden>
+        <div class="row">
+          <strong>Log</strong>
+          <div class="row compact" style="margin-top:0">
+            <button class="ghost" onclick="copyLog()">Copiar</button>
+            <button class="ghost" onclick="clearLog()">Limpar</button>
+          </div>
+        </div>
+        <pre id="debugLog" class="log"></pre>
+      </section>
+    </div>
+
+    <div class="view" id="view-tvs" hidden>
+      <section class="card">
+        <div class="row">
+          <strong>TVs pareadas</strong>
+          <button class="ghost" onclick="loadPairedDevices()">Atualizar</button>
+        </div>
+        <p class="muted">TVs que você já pareou neste aparelho — inclusive as que não estão visíveis na rede agora.</p>
+        <div id="pairedList" class="paired-list">
+          <p class="muted" id="pairedEmpty">Nenhuma TV pareada ainda.</p>
+        </div>
+      </section>
+    </div>
+
+    <div class="view" id="view-about" hidden>
+      <section class="card">
+        <div class="row">
+          <strong>MMPG Remote</strong>
+          <small id="aboutVersion" class="muted"></small>
+        </div>
+        <p class="muted">Controle remoto para Android TV/Google TV, LG webOS e Samsung Tizen — direto na sua rede local, sem servidor, sem nuvem.</p>
+      </section>
+
+      <section class="card" id="aboutPlanCard">
+        <strong>Seu plano</strong>
+        <p class="muted" id="aboutPlanStatus">Verificando…</p>
+        <div class="row compact" id="aboutPlanActions" hidden>
+          <button onclick="buyLifetimeFromAbout()">Comprar vitalício <span id="aboutPriceLifetime"></span></button>
+          <button class="ghost" onclick="buySubscriptionFromAbout()">Assinar <span id="aboutPriceMonthly"></span></button>
+        </div>
+      </section>
+
+      <section class="card">
+        <strong>Privacidade</strong>
+        <p class="muted">O MMPG Remote não cria conta, não usa anúncios, analytics ou rastreamento, e não coleta dados pessoais para controlar a TV — tudo acontece direto na sua rede local. Compras opcionais são processadas pelo Google Play Billing (o app nunca vê dados de pagamento).</p>
+      </section>
+
+      <section class="card">
+        <strong>Links</strong>
+        <div class="about-links">
+          <button class="link-button" onclick="openPrivacySummary()">Política de Privacidade</button>
+          <a href="https://mmpg.online" target="_blank" rel="noopener">mmpg.online</a>
+        </div>
+      </section>
+    </div>
   </main>
+
+  <nav class="tabbar">
+    <button class="tab-btn active" id="tabBtn-remote" onclick="showView('remote')">
+      <span class="tab-icon">🎮</span><span class="tab-label">Remoto</span>
+    </button>
+    <button class="tab-btn" id="tabBtn-tvs" onclick="showView('tvs')">
+      <span class="tab-icon">📺</span><span class="tab-label">Minhas TVs</span>
+    </button>
+    <button class="tab-btn" id="tabBtn-about" onclick="showView('about')">
+      <span class="tab-icon">ℹ️</span><span class="tab-label">Sobre</span>
+    </button>
+  </nav>
 
   <dialog id="pairDialog">
     <form method="dialog" onsubmit="return doPair(event)">
@@ -93,7 +175,35 @@
     </form>
   </dialog>
 
+  <dialog id="privacyDialog" class="privacy-dialog">
+    <div>
+      <div class="privacy-head">
+        <div>
+          <span class="privacy-eyebrow">Resumo dentro do app</span>
+          <h3>Política de Privacidade</h3>
+        </div>
+        <button type="button" class="ghost dialog-close" onclick="closePrivacySummary()" aria-label="Fechar">×</button>
+      </div>
+      <p class="privacy-lead">Esta janela resume os pontos principais para consulta rápida. A versão completa, oficial e mais atualizada fica publicada no link abaixo.</p>
+
+      <div class="privacy-summary">
+        <p><strong>Privacidade por padrão</strong><span>Sem conta, anúncios, analytics ou rastreamento.</span></p>
+        <p><strong>Controle local</strong><span>Comandos enviados direto entre celular e TV na mesma rede.</span></p>
+        <p><strong>Dados no aparelho</strong><span>TVs pareadas, nomes de exibição, identidade técnica e preferências ficam locais.</span></p>
+        <p><strong>Permissões</strong><span>Rede e Wi‑Fi servem para encontrar TVs próximas, não para localização geográfica.</span></p>
+        <p><strong>Compras</strong><span>Google Play Billing processa pagamentos; o app nunca vê cartão ou dados bancários.</span></p>
+        <p><strong>Exclusão</strong><span>Limpe dados do app, esqueça TVs pareadas ou desinstale para remover dados locais.</span></p>
+      </div>
+
+      <div class="privacy-actions">
+        <a href="https://mmpg.online/privacidade" target="_blank" rel="noopener">Ver política completa</a>
+        <button type="button" class="ghost" onclick="closePrivacySummary()">Fechar</button>
+      </div>
+    </div>
+  </dialog>
+
   <div id="toast"></div>
+  <script src="paywall.js"></script>
   <script src="app.js"></script>
 </body>
 </html>

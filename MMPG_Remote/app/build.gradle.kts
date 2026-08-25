@@ -75,10 +75,22 @@ dependencies {
     implementation("androidx.appcompat:appcompat:1.7.0")
     implementation("androidx.webkit:webkit:1.12.1")
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-android:1.9.0")
+    // Play Billing Library 8+ é obrigatória para apps novos/atualizações a
+    // partir de 31/08/2026 — ver https://developer.android.com/google/play/billing/deprecation-faq
+    // Presa em 8.0.0 (a mais nova é 9.1.0): a 9.x é compilada com metadata
+    // Kotlin 2.3, incompatível com o Kotlin 2.0.21 deste projeto — subir
+    // para 9.x exige primeiro atualizar o plugin Kotlin em build.gradle.kts.
+    implementation("com.android.billingclient:billing-ktx:8.0.0")
     // Used only to build the self-signed X.509 certificate for the client
     // TLS identity (see CertificateStore) - Android has no public API to
     // build a certificate from an arbitrary software-generated KeyPair.
     implementation("org.bouncycastle:bcpkix-jdk18on:1.78.1")
+    // WebSocket transport for LgWebOsProvider (SSAP protocol) - Android has
+    // no built-in WebSocket client; OkHttp's is the de facto standard one.
+    // Pinned to the 4.x line (not the newer 5.x) for the same reason as the
+    // Billing Library above: known-safe Kotlin metadata compatibility with
+    // this project's Kotlin 2.0.21, verified by a local build.
+    implementation("com.squareup.okhttp3:okhttp:4.12.0")
 
     testImplementation("junit:junit:4.13.2")
 }

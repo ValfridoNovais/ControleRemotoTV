@@ -13,21 +13,24 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.cancel
 import kotlinx.coroutines.launch
-import online.mmpg.remote.discovery.TvDevice
-import online.mmpg.remote.discovery.TvDiscovery
-import online.mmpg.remote.protocol.AndroidTvRemoteService
+import online.mmpg.remote.billing.BillingManager
+import online.mmpg.remote.protocol.ProtocolResult
+import online.mmpg.remote.tv.RemoteKey
+import online.mmpg.remote.tv.TvDevice
+import online.mmpg.remote.tv.TvManager
+import online.mmpg.remote.tv.TvPlatform
 import org.json.JSONArray
 import org.json.JSONObject
 
 class TvBridge(
     context: Context,
     private val webView: WebView,
-    private val discovery: TvDiscovery,
+    private val tvManager: TvManager,
+    private val billingManager: BillingManager,
     private val requestNearbyWifiPermission: () -> Unit
 ) {
     private val appContext = context.applicationContext
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
-    private val remoteService = AndroidTvRemoteService(context) { msg -> emitDiag(msg) }
 
     // Set when startDiscovery() had to defer to a runtime permission request;
     // consumed by notifyPermissionResult() to auto-resume the scan once the
@@ -55,12 +58,12 @@ class TvBridge(
             webView.post { requestNearbyWifiPermission() }
             return
         }
-        emitDiag("Permissão ok; chamando TvDiscovery.start()")
-        discovery.start { devices -> publishDevices(devices) }
+        emitDiag("Permissão ok; chamando TvManager.startDiscovery()")
+        tvManager.startDiscovery { devices -> publishDevices(devices) }
     }
 
     @JavascriptInterface
-    fun stopDiscovery() = discovery.stop()
+    fun stopDiscovery() = tvManager.stopDiscovery()
 
     /**
      * NEARBY_WIFI_DEVICES only exists from API 33 (Tiramisu) onward and is the
@@ -79,17 +82,17 @@ class TvBridge(
     }
 
     /**
-     * Steps 1-6 of pairing (see [AndroidTvRemoteService.beginPairing]): the TV
-     * only displays its PIN after this succeeds, so the UI must call this
-     * BEFORE it can know what PIN to ask the user for - it cannot be combined
-     * with [submitPairingPin] into a single call.
+     * Steps 1-6 of pairing (see [online.mmpg.remote.tv.providers.AndroidTvProvider.beginPairing]):
+     * the TV only displays its PIN after this succeeds, so the UI must call
+     * this BEFORE it can know what PIN to ask the user for - it cannot be
+     * combined with [submitPairingPin] into a single call.
      */
     @JavascriptInterface
     fun beginPairing(host: String, port: Int) {
         emitDiag("Conectando para parear com $host:$port…")
         scope.launch {
-            val result = remoteService.beginPairing(host, port)
-            emit("beginPairingResult", result)
+            val result = tvManager.beginPairing(host, port)
+            emit("beginPairingResult", result.toString())
         }
     }
 
@@ -97,55 +100,144 @@ class TvBridge(
     fun submitPairingPin(host: String, pin: String) {
         emitDiag("Enviando PIN para $host…")
         scope.launch {
-            val result = remoteService.submitPairingPin(host, pin)
-            emit("pairResult", result)
+            val result = tvManager.submitPairingCredential(host, pin)
+            emit("pairResult", result.toString())
         }
     }
 
     @JavascriptInterface
     fun cancelPairing() {
         emitDiag("Pareamento cancelado pelo usuário")
-        remoteService.cancelPairing()
+        tvManager.cancelPairing()
     }
 
     @JavascriptInterface
     fun connect(host: String) {
         emitDiag("Conectando ao canal remoto de $host…")
         scope.launch {
-            val result = remoteService.connect(host)
-            emit("connectResult", result)
+            val result = tvManager.connect(host)
+            emit("connectResult", result.toString())
         }
     }
 
+    /**
+     * [host] identifica qual [online.mmpg.remote.tv.TvProvider] deve receber
+     * o comando (ver [TvManager.sendKey]) - antes desta refatoração o app só
+     * conhecia um provider e não precisava dessa informação; passou a
+     * precisar para que um futuro provider sem conexão persistente (ex.:
+     * Roku, que envia cada tecla como uma requisição HTTP separada) funcione
+     * com o mesmo contrato.
+     */
     @JavascriptInterface
-    fun sendKey(key: String) {
+    fun sendKey(host: String, key: String) {
         scope.launch {
-            val result = remoteService.sendKey(key)
-            emit("keyResult", result)
+            val remoteKey = RemoteKey.fromWireName(key)
+            val result = if (remoteKey == null) {
+                ProtocolResult(false, "UNKNOWN_KEY", "Comando não suportado: $key")
+            } else {
+                tvManager.sendKey(host, remoteKey)
+            }
+            emit("keyResult", result.toString())
         }
     }
 
     @JavascriptInterface
     fun forget(host: String) {
         scope.launch {
-            val result = remoteService.forget(host)
-            emit("forgetResult", result)
+            val result = tvManager.forget(host)
+            emit("forgetResult", result.toString())
         }
     }
 
     /**
      * Resets the app's shared pairing identity (see
-     * [AndroidTvRemoteService.resetIdentity]). Unlike [forget], this affects
+     * [TvManager.resetAndroidTvIdentity]). Unlike [forget], this affects
      * every paired TV at once - the UI must only expose it as a separate,
      * clearly-labeled destructive action, never as part of per-TV "Esquecer".
      */
     @JavascriptInterface
     fun resetIdentity() {
         scope.launch {
-            val result = remoteService.resetIdentity()
-            emit("resetIdentityResult", result)
+            val result = tvManager.resetAndroidTvIdentity()
+            emit("resetIdentityResult", result.toString())
         }
     }
+
+    /** Lista TVs com credencial salva em qualquer provider, mesmo offline agora; emite "pairedDevices" (mesmo formato de "devices"). */
+    @JavascriptInterface
+    fun getPairedDevices() {
+        scope.launch {
+            emit("pairedDevices", devicesToJson(tvManager.pairedDevices()))
+        }
+    }
+
+    /**
+     * Consulta se o usuário já tem premium (vitalício ou assinatura ativa);
+     * emite "entitlement". [BillingManager.queryEntitlement] já tem seu
+     * próprio timeout contra o BillingClient travar (ex.: DEVELOPER_ERROR
+     * com auto-reconexão tentando pra sempre), mas o try/catch aqui é uma
+     * segunda camada: `scope.launch` não é aguardado, então qualquer exceção
+     * não capturada dentro dele mataria a corrotina em silêncio e o evento
+     * "entitlement" nunca chegaria à WebView - e o paywall inteiro depende
+     * desse evento pra sequer contar uma sessão (ver paywall.js). Nunca
+     * deixar essa checagem sumir sem resposta.
+     */
+    @JavascriptInterface
+    fun getEntitlement() {
+        scope.launch {
+            val entitlement = try {
+                billingManager.queryEntitlement()
+            } catch (e: Exception) {
+                emitDiag("getEntitlement falhou (${e.javaClass.simpleName}); tratando como não-premium")
+                JSONObject().put("premium", false).put("source", JSONObject.NULL)
+            }
+            emit("entitlement", entitlement.toString())
+        }
+    }
+
+    /** Busca os preços localizados (o que estiver cadastrado no Play Console); emite "productPrices". Mesma proteção de [getEntitlement]. */
+    @JavascriptInterface
+    fun getProductPrices() {
+        scope.launch {
+            val prices = try {
+                billingManager.fetchPrices()
+            } catch (e: Exception) {
+                emitDiag("getProductPrices falhou (${e.javaClass.simpleName})")
+                JSONObject()
+                    .put("lifetime", JSONObject().put("productId", BillingManager.PRODUCT_LIFETIME).put("price", ""))
+                    .put("monthly", JSONObject().put("productId", BillingManager.PRODUCT_MONTHLY).put("price", ""))
+            }
+            emit("productPrices", prices.toString())
+        }
+    }
+
+    @JavascriptInterface
+    fun buyLifetime() {
+        scope.launch {
+            emit("buyResult", billingManager.launchPurchase(BillingManager.PRODUCT_LIFETIME).toString())
+        }
+    }
+
+    @JavascriptInterface
+    fun buySubscription() {
+        scope.launch {
+            emit("buyResult", billingManager.launchPurchase(BillingManager.PRODUCT_MONTHLY).toString())
+        }
+    }
+
+    /** Chamado por [BillingManager] (via MainActivity) sempre que o entitlement muda. */
+    fun emitEntitlement(json: JSONObject) = emit("entitlement", json.toString())
+
+    /** Chamado por [BillingManager] com o desfecho real de uma compra (comprado/cancelado/erro). */
+    fun emitPurchaseResult(json: JSONObject) = emit("purchaseResult", json.toString())
+
+    /**
+     * Chamado por [MainActivity.onResume] quando o app volta de um período
+     * longo em segundo plano (ver [MainActivity]) - minimizar sem fechar de
+     * verdade nunca recarrega a WebView, então sem este sinal explícito o
+     * paywall (ver `paywall.js`) nunca contaria isso como uma sessão nova.
+     */
+    fun notifyResumedFromBackground() = emit("resumedFromBackground", JSONObject().toString())
 
     fun notifyPermissionResult(granted: Boolean) {
         emit("permissionResult", JSONObject().put("granted", granted).toString())
@@ -153,20 +245,35 @@ class TvBridge(
         discoveryPendingPermission = false
         if (granted && wasPending) {
             Log.i(TAG, "NEARBY_WIFI_DEVICES granted; resuming deferred discovery")
-            discovery.start { devices -> publishDevices(devices) }
+            tvManager.startDiscovery { devices -> publishDevices(devices) }
         }
     }
 
-    private fun publishDevices(devices: List<TvDevice>) {
+    private fun publishDevices(devices: List<TvDevice>) = emit("devices", devicesToJson(devices))
+
+    private fun devicesToJson(devices: List<TvDevice>): String {
         val arr = JSONArray()
         devices.forEach { d ->
             arr.put(JSONObject().apply {
                 put("name", d.name)
                 put("host", d.host)
-                put("port", d.port)
+                put("port", d.port ?: JSONObject.NULL)
+                put("platform", d.platform.name)
+                put("platformLabel", platformLabel(d.platform))
             })
         }
-        emit("devices", arr.toString())
+        return arr.toString()
+    }
+
+    private fun platformLabel(platform: TvPlatform): String = when (platform) {
+        TvPlatform.ANDROID_TV -> "Android TV / Google TV"
+        TvPlatform.SAMSUNG_TIZEN -> "Samsung Tizen"
+        TvPlatform.LG_WEBOS -> "LG webOS"
+        TvPlatform.ROKU -> "Roku"
+        TvPlatform.FIRE_TV -> "Fire TV"
+        TvPlatform.HISENSE_VIDAA -> "Hisense VIDAA"
+        TvPlatform.GENERIC_NETWORK -> "Rede genérica"
+        TvPlatform.UNKNOWN -> "Desconhecida"
     }
 
     /**
@@ -191,7 +298,7 @@ class TvBridge(
 
     fun close() {
         scope.cancel()
-        remoteService.close()
+        tvManager.close()
     }
 
     private companion object {

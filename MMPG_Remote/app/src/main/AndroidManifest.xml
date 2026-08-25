@@ -8,13 +8,27 @@
         android:name="android.permission.NEARBY_WIFI_DEVICES"
         android:usesPermissionFlags="neverForLocation" />
 
+    <!--
+      usesCleartextTraffic=true: alguns providers de TV (LgWebOsProvider,
+      SamsungTizenProvider) precisam falar ws:// e http:// puro com
+      firmwares mais antigos que nunca ofereceram a variante TLS dessas
+      portas de controle - a política padrão do Android bloqueia isso na
+      camada de rede antes mesmo do pacote sair do aparelho
+      (CLEARTEXT communication not permitted), quebrando silenciosamente
+      tanto o fallback ws://:3000 da LG quanto o GET http://:8001/api/v2/
+      usado para descobrir/identificar TVs Samsung. Este app nunca fala com
+      a internet pública (só LAN, ver AGENTS.md, e Google Play Billing, que
+      já é HTTPS e não é afetado por esta flag) - liberar cleartext aqui não
+      abre uma superfície nova de ataque real, só destrava o controle de
+      hardware de TV mais antigo que o protocolo em si já não protege com TLS.
+    -->
     <application
         android:allowBackup="true"
         android:icon="@mipmap/ic_launcher"
         android:roundIcon="@mipmap/ic_launcher_round"
         android:label="MMPG Remote"
         android:theme="@style/Theme.MMPGRemote"
-        android:usesCleartextTraffic="false">
+        android:usesCleartextTraffic="true">
         <activity
             android:name=".MainActivity"
             android:exported="true">

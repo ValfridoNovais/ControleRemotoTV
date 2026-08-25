@@ -88,16 +88,36 @@ class CertificateStore(
 
     fun isPaired(host: String): Boolean = prefs.getBoolean("$PAIRED_KEY_PREFIX$host", false)
 
+    /** Todos os hosts com `paired:<host>=true` - usado pela tela "Minhas TVs" para listar TVs pareadas mesmo offline. */
+    fun pairedHosts(): List<String> =
+        prefs.all.keys
+            .filter { it.startsWith(PAIRED_KEY_PREFIX) && prefs.getBoolean(it, false) }
+            .map { it.removePrefix(PAIRED_KEY_PREFIX) }
+
+    /**
+     * Nome de exibição salvo no momento do pareamento (vem do último
+     * `TvDevice` visto na descoberta - ver [online.mmpg.remote.tv.providers.AndroidTvProvider]).
+     * Só para a UI "Minhas TVs" mostrar um nome legível em vez do IP puro;
+     * não tem nenhum papel no protocolo/segurança.
+     */
+    fun saveName(host: String, name: String) {
+        prefs.edit().putString("$NAME_KEY_PREFIX$host", name).apply()
+    }
+
+    fun getName(host: String): String? = prefs.getString("$NAME_KEY_PREFIX$host", null)
+
     /**
      * Removes every persisted trace of pairing with [host] and only [host] -
-     * currently just its `paired:<host>` flag, which is the sole per-host
-     * value this store persists. Other paired TVs, and the shared client
-     * identity itself, are left completely untouched; see
+     * seu flag `paired:<host>` e nome salvo. Other paired TVs, and the
+     * shared client identity itself, are left completely untouched; see
      * [resetClientIdentity] for the separate, stronger action that does
      * affect every TV.
      */
     fun forget(host: String) {
-        prefs.edit().remove("$PAIRED_KEY_PREFIX$host").apply()
+        prefs.edit()
+            .remove("$PAIRED_KEY_PREFIX$host")
+            .remove("$NAME_KEY_PREFIX$host")
+            .apply()
         // The client certificate/key identity is shared across every TV (see
         // class doc) - it is intentionally NOT deleted here. Removing it
         // would force re-pairing on every other already-paired TV as a side
@@ -256,6 +276,7 @@ class CertificateStore(
         private const val CLIENT_COMMON_NAME = "MMPG Remote"
         private const val CERTIFICATE_VALIDITY_YEARS = 10
         private const val PAIRED_KEY_PREFIX = "paired:"
+        private const val NAME_KEY_PREFIX = "name:"
         private const val PRIVATE_KEY_PREF = "client_private_key_enc"
         private const val PRIVATE_KEY_IV_PREF = "client_private_key_iv"
         private const val CERT_PREF = "client_certificate"

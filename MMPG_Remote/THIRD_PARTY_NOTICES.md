@@ -5,8 +5,13 @@ Este scaffold não incorpora diretamente o código-fonte das implementações de
 - tronikos/androidtvremote2 — Apache License 2.0
 - louis49/androidtv-remote — MIT License
 - kud/androidtv-remote — MIT License
+- hobbyquaker/lgtv2 — MIT License (referência para o `LgWebOsProvider` — ver
+  seção "LG webOS" abaixo)
+- xchwarze/samsung-tv-ws-api — LGPL-3.0 License (referência para o
+  `SamsungTizenProvider` — ver seção "Samsung Tizen" abaixo; nenhum código
+  incorporado, só fatos de protocolo consultados)
 
-Uma dependência de código de terceiros é de fato incorporada (compilada no APK, não apenas consultada como referência):
+Dependências de código de terceiros de fato incorporadas (compiladas no APK, não apenas consultadas como referência):
 
 - **Bouncy Castle** (`org.bouncycastle:bcpkix-jdk18on`) — MIT License —
   https://www.bouncycastle.org/ — usada em `CertificateStore.kt` só para
@@ -16,6 +21,11 @@ Uma dependência de código de terceiros é de fato incorporada (compilada no AP
   pública para gerar um certificado a partir de um `KeyPair` arbitrário fora
   do fluxo de geração de chave do próprio `AndroidKeyStore` (ver seção
   "Identidade de cliente em software" abaixo para o porquê da mudança).
+- **OkHttp** (`com.squareup.okhttp3:okhttp`) — Apache License 2.0 —
+  https://square.github.io/okhttp/ — usada em `LgSsapClient.kt` como
+  transporte WebSocket para o protocolo SSAP do LG webOS. Android não tem
+  cliente WebSocket embutido; OkHttp é o padrão de fato para isso na
+  plataforma.
 
 Ao incorporar ou adaptar qualquer trecho de código, o agente deve revisar a licença específica da versão utilizada e preservar os avisos exigidos.
 
@@ -206,3 +216,93 @@ uma única mensagem `RemoteKeyInject{direction=SHORT}`, e o mapeamento das 14
 teclas de `RemoteProtocol.supportedKeys` (UP/DOWN/LEFT/RIGHT/ENTER/HOME/
 BACK/POWER/VOLUME_UP/VOLUME_DOWN/MUTE/CHANNEL_UP/CHANNEL_DOWN/PLAY_PAUSE)
 para os keycodes oficiais, sem depender de um `Socket`/`SSLSocket` real.
+
+## LG webOS — arquivos consultados
+
+Ao implementar `LgWebOsProvider.kt`, `LgSsapClient.kt`,
+`providers/ssdp/SsdpDiscovery.kt` e `LgManifest.kt`, os seguintes arquivos de
+referência foram consultados (via WebSearch/WebFetch — não há um clone local
+destes repositórios neste projeto):
+
+- **hobbyquaker/lgtv2** (MIT License)
+  — https://github.com/hobbyquaker/lgtv2
+  - `index.js` — formato das mensagens SSAP (`{id, type, uri?, payload}`),
+    estratégia de porta (`wss://host:3001` com fallback para
+    `ws://host:3000`), e o protocolo de texto do socket especializado de
+    ponteiro/botão (`SpecializedSocket.send`: linhas `chave:valor`
+    terminadas por uma linha em branco).
+  - `pairing.json` — o manifesto de pareamento (app de teste `com.lge.test`,
+    assinado pela LG) reproduzido **verbatim** em `LgManifest.kt` — mudar
+    qualquer campo do bloco `signed` invalidaria a assinatura; é o mesmo
+    manifesto reutilizado sem alteração por praticamente todo cliente LG
+    webOS de código aberto.
+- Busca cruzada em código aberto (klattimer/LGWebOSRemote,
+  home-assistant-libs/aiowebostv, LGTVCompanion, LG_Smart_TV_hubitat) para
+  confirmar o vocabulário de nomes de botão do socket de ponteiro
+  (`UP`/`DOWN`/`LEFT`/`RIGHT`/`HOME`/`BACK`/`ENTER`/`VOLUMEUP`/`VOLUMEDOWN`/
+  `MUTE`/`CHANNELUP`/`CHANNELDOWN`) e o endpoint `ssap://system/turnOff`.
+- **UDAP / SSDP** — `urn:lge-com:service:webos-second-screen:1` como Search
+  Target do M-SEARCH, confirmado em múltiplas fontes (openHAB LG webOS
+  binding, Home Assistant webostv integration, discussões de
+  R0nd/LgSmartTvRemote).
+- **Issues reais** de hobbyquaker/lgtv2 (nº 24: porta 3000 fechada em
+  firmwares webOS 4) e de home-assistant/core (integração LG webOS: "nenhum
+  pedido de pareamento aparece na TV", "connection reset by peer" mesmo com
+  portas abertas) — consultadas depois que a descoberta SSDP se mostrou
+  pouco confiável na prática (testando contra uma Samsung real), para
+  levantar proativamente outros problemas já documentados pela comunidade
+  em vez de esperar o próximo aparecer sozinho. Resultado em
+  `LgWebOsProvider`: fallback de porta em `LgSsapClient`, varredura de
+  sub-rede (`LgSubnetScan`) e mensagens de erro que citam a configuração
+  "LG Connect Apps"/"Controle de IP em rede" da TV — ver
+  docs/providers/lg-webos.md, seção 10.
+
+Nenhum trecho de código-fonte do lgtv2 foi copiado, com uma única exceção
+deliberada e explicitamente marcada: o conteúdo de `pairing.json` (o
+manifesto assinado), reproduzido byte a byte em `LgManifest.kt` porque
+qualquer edição invalidaria a assinatura criptográfica da LG. Todo o resto
+(`LgSsapClient.kt`, `LgWebOsProvider.kt`, e `providers/ssdp/SsdpDiscovery.kt`,
+depois generalizada para servir também ao provider Samsung abaixo) é Kotlin
+original que reimplementa apenas os fatos de protocolo acima (formato de
+mensagem, nomes de campo, nomes de botão), como já é a prática deste projeto
+para o Android TV Remote Protocol v2.
+
+**Este provider não foi validado contra uma TV LG real** (ao contrário do
+Android TV, confirmado contra uma TCL 32S615 física) — ver o comentário de
+classe em `LgWebOsProvider.kt` e `docs/providers/lg-webos.md`.
+
+## Samsung Tizen — arquivos consultados
+
+Ao implementar `SamsungTizenProvider.kt`, `SamsungWsClient.kt`,
+`SamsungInfoClient.kt` e `WakeOnLan.kt`, os seguintes arquivos de referência
+foram consultados (via WebSearch/WebFetch — não há um clone local destes
+repositórios neste projeto):
+
+- **xchwarze/samsung-tv-ws-api** (LGPL-3.0)
+  — https://github.com/xchwarze/samsung-tv-ws-api
+  - `samsungtvws/connection.py` — construção da URL do WebSocket
+    (`wss://host:8002/api/v2/channels/samsung.remote.control?name=<base64>`,
+    com `&token=` opcional), nomes de evento de pareamento
+    (`MS_CHANNEL_CONNECT_EVENT`/`MS_CHANNEL_UNAUTHORIZED`) e onde o token
+    aparece na resposta (`data.token`).
+  - `samsungtvws/remote.py` — formato exato do comando de tecla
+    (`{"method":"ms.remote.control","params":{"Cmd":"Click","DataOfCmd":...,
+    "Option":"false","TypeOfRemote":"SendRemoteKey"}}`).
+  - `samsungtvws/rest.py` — endpoint HTTP não autenticado de informações do
+    aparelho (`http://host:8001/api/v2/`).
+- Busca cruzada em código aberto (samsungctl, samsung-tv-api, integrações
+  Home Assistant/openHAB/Platypush) para confirmar o vocabulário de teclas
+  (`KEY_UP`/`KEY_DOWN`/.../`KEY_POWER`/`KEY_VOLUP`/`KEY_CHUP`/etc.), o campo
+  `wifiMac` na resposta do endpoint de informações, e o Search Target SSDP
+  `urn:samsung.com:device:RemoteControlReceiver:1`.
+
+Nenhum trecho de código-fonte do samsung-tv-ws-api foi copiado — só os fatos
+de protocolo acima (formato de URL/mensagem, nomes de campo e evento) foram
+reimplementados como Kotlin original. Por não incorporar nenhum código-fonte
+LGPL a este projeto, as condições de copyleft da licença não se aplicam
+aqui — a mesma lógica já usada para as referências Apache/MIT do Android TV.
+
+**Este provider não foi validado contra uma TV Samsung real no momento em
+que este arquivo foi escrito**, embora exista uma disponível (Samsung
+UN50RU7100G, ~2019) para essa validação assim que alguém testar — ver
+`docs/providers/samsung-tizen.md`.

@@ -1,0 +1,258 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>Política de Privacidade - MMPG Remote</title>
+  <meta name="description" content="Política de Privacidade do aplicativo MMPG Remote.">
+  <style>
+    :root{
+      color-scheme:dark;
+      --bg:#0b0d10;
+      --panel:#15191f;
+      --panel2:#1c222a;
+      --text:#f5f7fa;
+      --muted:#a8b3c1;
+      --line:#2a333e;
+      --accent:#10b981;
+    }
+    *{box-sizing:border-box}
+    body{
+      margin:0;background:var(--bg);color:var(--text);
+      font-family:Inter,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",Arial,sans-serif;
+      line-height:1.65;
+    }
+    a{color:#8ee6c2}
+    .wrap{max-width:920px;margin:0 auto;padding:32px 18px 56px}
+    header{padding:28px 0 22px;border-bottom:1px solid var(--line);margin-bottom:28px}
+    .brand{display:flex;align-items:center;gap:12px;margin-bottom:18px}
+    .mark{
+      width:42px;height:42px;border-radius:12px;display:flex;align-items:center;justify-content:center;
+      background:linear-gradient(135deg,#10b981,#06b6d4);color:#07100f;font-weight:900;font-size:20px;
+    }
+    .brand strong{display:block;font-size:18px}
+    .brand span span{display:block;color:var(--muted);font-size:13px}
+    h1{font-size:clamp(30px,6vw,48px);line-height:1.08;margin:0 0 10px}
+    h2{font-size:24px;line-height:1.2;margin:34px 0 12px}
+    h3{font-size:18px;margin:24px 0 8px}
+    p{margin:0 0 14px}
+    ul{padding-left:22px;margin:0 0 16px}
+    li{margin:6px 0}
+    .muted{color:var(--muted)}
+    .summary{
+      background:var(--panel);border:1px solid var(--line);border-radius:16px;
+      padding:18px;margin:22px 0;
+    }
+    .toc{
+      background:var(--panel2);border:1px solid var(--line);border-radius:16px;
+      padding:18px;margin:22px 0 30px;
+    }
+    .toc ul{columns:2;list-style:none;padding:0;margin:0}
+    .toc li{break-inside:avoid;margin:5px 0}
+    table{width:100%;border-collapse:collapse;margin:14px 0 18px;background:var(--panel)}
+    th,td{border:1px solid var(--line);padding:12px;text-align:left;vertical-align:top}
+    th{background:var(--panel2)}
+    code{background:var(--panel2);border:1px solid var(--line);border-radius:6px;padding:1px 5px}
+    footer{margin-top:36px;padding-top:22px;border-top:1px solid var(--line);color:var(--muted);font-size:14px}
+    @media (max-width:720px){
+      .toc ul{columns:1}
+      table,thead,tbody,tr,th,td{display:block}
+      th{border-bottom:0}
+      td{border-top:0;margin-bottom:10px}
+    }
+  </style>
+</head>
+<body>
+  <main class="wrap">
+    <header>
+      <div class="brand">
+        <div class="mark">M</div>
+        <span><strong>MMPG Remote</strong><span>Controle local para Android TV, Google TV, LG webOS e Samsung Tizen</span></span>
+      </div>
+      <h1>Política de Privacidade</h1>
+      <p class="muted">Última atualização: 25 de agosto de 2026</p>
+    </header>
+
+    <p>Esta Política de Privacidade explica como o <strong>MMPG Remote</strong>, aplicativo de controle remoto para Android TV / Google TV, LG webOS e Samsung Tizen, desenvolvido por <strong>MMPG Novais</strong>, trata informações relacionadas ao uso do app, do site e das compras opcionais.</p>
+    <p>Esta política foi escrita para atender aos princípios de transparência, necessidade, segurança e finalidade previstos em legislações de proteção de dados, incluindo a <strong>LGPD</strong> (Brasil), e para facilitar a revisão em plataformas de distribuição como <strong>Google Play</strong> e, se aplicável no futuro, outras lojas de aplicativos.</p>
+
+    <section class="summary">
+      <h2 id="resumo">Resumo rápido</h2>
+      <p>O MMPG Remote foi projetado para funcionar de forma local e privada:</p>
+      <ul>
+        <li>O app não cria conta de usuário.</li>
+        <li>O app não coleta nome, e-mail, telefone, CPF, documentos, contatos, fotos, arquivos, agenda, microfone, câmera ou localização geográfica.</li>
+        <li>O app não usa anúncios, analytics, rastreamento, SDK de marketing, SDK de redes sociais ou crash reporting de terceiros.</li>
+        <li>O app não possui servidor próprio, backend, API em nuvem ou painel administrativo recebendo dados de uso.</li>
+        <li>O controle da TV acontece diretamente entre o celular e a televisão, dentro da mesma rede local.</li>
+        <li>Compras opcionais são processadas pelo Google Play Billing. O app não recebe dados de cartão, banco ou forma de pagamento.</li>
+      </ul>
+    </section>
+
+    <nav class="toc" aria-label="Índice">
+      <strong>Índice</strong>
+      <ul>
+        <li><a href="#controlador">Controlador</a></li>
+        <li><a href="#funcionamento">Como o app funciona</a></li>
+        <li><a href="#nao-coleta">Dados que o app não coleta</a></li>
+        <li><a href="#dados-locais">Dados locais</a></li>
+        <li><a href="#permissoes">Permissões</a></li>
+        <li><a href="#compras">Compras</a></li>
+        <li><a href="#compartilhamento">Compartilhamento</a></li>
+        <li><a href="#direitos">Direitos do usuário</a></li>
+      </ul>
+    </nav>
+
+    <h2 id="controlador">Quem é o controlador dos dados</h2>
+    <p>Para os dados que eventualmente estejam sob responsabilidade direta do MMPG Remote, o controlador é:</p>
+    <p><strong>MMPG Novais</strong><br>Site: <a href="https://mmpg.online">https://mmpg.online</a></p>
+    <p>Como o app não mantém conta, cadastro, servidor próprio ou base centralizada de usuários, a maior parte das informações tratadas pelo app permanece exclusivamente no dispositivo do usuário.</p>
+
+    <h2 id="funcionamento">Como o app funciona</h2>
+    <p>O MMPG Remote se comunica com a televisão selecionada na mesma rede local do usuário. Dependendo do modelo da TV, essa comunicação pode usar protocolos de descoberta e controle compatíveis com Android TV / Google TV, LG webOS ou Samsung Tizen.</p>
+    <p>Essa comunicação local pode envolver descoberta de TVs, exibição de nome/endereço local, pareamento, envio de comandos de controle remoto e reconexão com TVs já pareadas. Essas informações são usadas somente para permitir o funcionamento do controle remoto e não são enviadas para servidores do MMPG Remote.</p>
+
+    <h2 id="nao-coleta">Dados que o app não coleta</h2>
+    <p>O MMPG Remote não coleta nem transmite ao desenvolvedor:</p>
+    <ul>
+      <li>dados de identificação pessoal, como nome, e-mail, telefone, CPF, endereço ou data de nascimento;</li>
+      <li>dados de localização geográfica precisa ou aproximada;</li>
+      <li>contatos, calendário, SMS, chamadas ou lista de apps instalados;</li>
+      <li>fotos, vídeos, arquivos, documentos ou conteúdo da área de transferência;</li>
+      <li>áudio do microfone ou imagem da câmera;</li>
+      <li>histórico de navegação, histórico de canais assistidos ou conteúdo visto na TV;</li>
+      <li>dados de publicidade, perfilamento, marketing ou rastreamento entre apps e sites;</li>
+      <li>telemetria, analytics, eventos de uso ou relatórios automáticos de falha enviados a terceiros;</li>
+      <li>dados sensíveis, como saúde, biometria, religião, opinião política, origem racial ou étnica.</li>
+    </ul>
+
+    <h2 id="dados-locais">Dados tratados localmente no aparelho</h2>
+    <p>Para funcionar, o app pode armazenar informações técnicas no armazenamento privado do próprio aplicativo, no dispositivo do usuário:</p>
+    <ul>
+      <li>identidade criptográfica local do app, composta por certificado TLS e chave privada, usada para reconhecer o celular junto a TVs já pareadas;</li>
+      <li>indicador de que uma TV específica foi pareada;</li>
+      <li>nome de exibição e endereço local da TV pareada, quando disponível, para mostrar a TV na tela "Minhas TVs";</li>
+      <li>preferências e estados locais de interface;</li>
+      <li>contadores locais usados para controlar a exibição da tela de oferta da versão gratuita.</li>
+    </ul>
+    <p>Esses dados ficam no próprio dispositivo, dentro da área privada do aplicativo. Eles não são vendidos, compartilhados ou enviados para servidores do MMPG Remote.</p>
+    <p>O usuário pode remover esses dados ao esquecer uma TV pareada, redefinir a identidade de pareamento, limpar os dados do app nas configurações do Android ou desinstalar o aplicativo.</p>
+
+    <h2 id="permissoes">Permissões usadas e finalidade</h2>
+    <table>
+      <thead>
+        <tr><th>Permissão</th><th>Finalidade</th></tr>
+      </thead>
+      <tbody>
+        <tr><td><code>INTERNET</code></td><td>Permite abrir conexões de rede. No uso principal do app, essas conexões são feitas com TVs na rede local. Também permite que o Google Play Billing funcione quando o usuário consulta preços ou realiza compra opcional.</td></tr>
+        <tr><td><code>ACCESS_NETWORK_STATE</code></td><td>Permite verificar o estado da conexão de rede para orientar descoberta e conexão com TVs.</td></tr>
+        <tr><td><code>ACCESS_WIFI_STATE</code></td><td>Permite obter informações técnicas da rede Wi-Fi necessárias para descoberta local de dispositivos.</td></tr>
+        <tr><td><code>CHANGE_WIFI_MULTICAST_STATE</code></td><td>Permite usar multicast/mDNS/SSDP ou mecanismos equivalentes de descoberta de dispositivos na rede local.</td></tr>
+        <tr><td><code>NEARBY_WIFI_DEVICES</code></td><td>Necessária em versões recentes do Android para descobrir dispositivos próximos na rede Wi-Fi. O app declara <code>neverForLocation</code> e não usa essa permissão para localizar geograficamente o usuário.</td></tr>
+      </tbody>
+    </table>
+    <p>Nenhuma dessas permissões é usada para publicidade, rastreamento, venda de dados ou perfilamento.</p>
+
+    <h2>Comunicação local e tráfego de rede</h2>
+    <p>O app foi criado para controlar TVs na rede local. Por isso, pode se comunicar com endereços privados da rede do usuário, como endereços iniciados por <code>192.168.x.x</code>, <code>10.x.x.x</code> ou <code>172.16.x.x</code> a <code>172.31.x.x</code>, além de nomes de dispositivos anunciados na rede.</p>
+    <p>Algumas TVs e firmwares antigos só oferecem determinados recursos por conexões locais sem TLS, como <code>http://</code> ou <code>ws://</code>. Quando isso ocorre, o app pode usar esse tipo de comunicação apenas para falar com a TV na rede local. Essa permissão não significa que o app envie dados pessoais para a internet pública sem criptografia.</p>
+
+    <h2>Pareamento, PIN e certificados</h2>
+    <p>Quando uma TV exige pareamento, o usuário pode precisar digitar no app um código ou PIN exibido na televisão. Esse código é usado somente durante a tentativa de pareamento, não é salvo pelo app, não é enviado ao desenvolvedor e não é usado para identificar o usuário.</p>
+    <p>Para permitir reconexão futura, o app pode manter uma identidade criptográfica local. Essa identidade é técnica, gerada pelo próprio app, e serve para que a TV reconheça o celular já pareado. A chave privada é armazenada de forma criptografada no dispositivo sempre que a plataforma oferecer suporte apropriado.</p>
+
+    <h2 id="compras">Compras dentro do app</h2>
+    <p>O MMPG Remote pode oferecer plano premium opcional, como compra vitalícia ou assinatura mensal, para remover a tela de oferta exibida na versão gratuita.</p>
+    <p>As compras são processadas pelo <strong>Google Play Billing</strong>:</p>
+    <ul>
+      <li>o app não recebe número de cartão, dados bancários, endereço de cobrança ou credenciais de pagamento;</li>
+      <li>o app recebe apenas informações técnicas necessárias para saber se o plano premium está ativo;</li>
+      <li>a compra pode ficar associada à Conta Google usada na Play Store, conforme as políticas do Google;</li>
+      <li>cancelamentos, reembolsos, histórico de pagamento, métodos de pagamento e assinaturas são gerenciados pela Google Play Store ou pela Conta Google do usuário;</li>
+      <li>o tratamento de dados pelo Google segue a Política de Privacidade do Google e os termos aplicáveis do Google Play.</li>
+    </ul>
+    <p>Links úteis: <a href="https://policies.google.com/privacy">Política de Privacidade do Google</a>, <a href="https://payments.google.com">Google Payments</a> e <a href="https://play.google.com">Google Play</a>.</p>
+
+    <h2>Tela de oferta da versão gratuita</h2>
+    <p>Na versão gratuita, o app pode exibir periodicamente uma tela convidando o usuário a apoiar o projeto ou adquirir o plano premium. Para controlar a frequência dessa tela, o app pode manter contadores e datas localmente no aparelho. Esses dados não identificam diretamente o usuário, não são enviados ao desenvolvedor, não são compartilhados com terceiros e podem ser removidos ao limpar os dados do app ou desinstalá-lo.</p>
+
+    <h2 id="compartilhamento">Compartilhamento de dados</h2>
+    <p>O MMPG Remote não vende, aluga, licencia ou compartilha dados pessoais do usuário com anunciantes, redes sociais, data brokers ou empresas de marketing.</p>
+    <p>Podem existir tratamentos por terceiros independentes nas seguintes situações:</p>
+    <ul>
+      <li><strong>Google Play / Google Play Billing:</strong> quando o usuário baixa o app, consulta compras, assina, compra, cancela ou solicita reembolso pela Play Store.</li>
+      <li><strong>Loja de aplicativos usada para distribuição:</strong> a loja pode tratar dados de conta, dispositivo, download, pagamento, avaliação, diagnóstico ou segurança conforme suas próprias políticas.</li>
+      <li><strong>Site mmpg.online:</strong> caso o usuário acesse o site, o provedor de hospedagem, DNS, segurança ou infraestrutura pode processar dados técnicos normais de acesso, como endereço IP, data, hora, navegador e logs de servidor.</li>
+      <li><strong>Obrigação legal:</strong> dados podem ser tratados ou preservados se houver obrigação legal, ordem de autoridade competente ou necessidade de defesa de direitos.</li>
+    </ul>
+    <p>O app em si não envia uma base de dados de usuários ao desenvolvedor.</p>
+
+    <h2>Site, links externos e publicação web</h2>
+    <p>O app pode conter links para páginas externas, como <code>mmpg.online</code>, política de privacidade, suporte, contato ou páginas da loja. Ao tocar em links externos, o usuário sai do ambiente principal do app e passa a usar o navegador, a loja ou outro serviço. Esses ambientes podem ter suas próprias políticas de privacidade, cookies, logs e configurações.</p>
+
+    <h2>Cookies e tecnologias semelhantes</h2>
+    <p>O app Android não usa cookies para rastreamento, publicidade ou analytics. Se o site <code>mmpg.online</code> disponibilizar páginas web, o funcionamento técnico da hospedagem pode gerar logs de acesso ou usar cookies estritamente necessários, dependendo da infraestrutura configurada. Se futuramente forem usados cookies não essenciais, analytics, formulários, newsletter, publicidade ou ferramentas similares, esta política deverá ser atualizada antes ou no momento da ativação desses recursos.</p>
+
+    <h2>Crianças e adolescentes</h2>
+    <p>O MMPG Remote não é direcionado especificamente a crianças. O app é uma ferramenta utilitária de controle remoto para uso doméstico. O app não solicita idade, não cria perfis infantis, não exibe publicidade comportamental e não coleta conscientemente dados pessoais de crianças ou adolescentes.</p>
+
+    <h2>Base legal e finalidades</h2>
+    <p>Quando houver tratamento de dados pessoais sob responsabilidade direta do MMPG Remote, ele ocorrerá conforme bases legais aplicáveis, incluindo execução de contrato ou procedimentos preliminares, cumprimento de obrigação legal ou regulatória, legítimo interesse e consentimento quando algum recurso futuro exigir autorização específica.</p>
+
+    <h2>Retenção e exclusão</h2>
+    <p>Como regra, o MMPG Remote não mantém uma base centralizada de dados pessoais dos usuários. Dados locais permanecem no aparelho enquanto o app estiver instalado ou até que o usuário os remova. Dados relacionados a compras, assinaturas, pagamentos, reembolsos e histórico de transações são retidos e gerenciados pelo Google ou pela loja de aplicativos conforme suas próprias políticas e obrigações legais.</p>
+    <p>Se o usuário entrar em contato por e-mail, formulário, loja de aplicativos ou outro canal externo, as mensagens e dados fornecidos voluntariamente poderão ser mantidos pelo tempo necessário para responder, cumprir obrigações legais, prevenir fraude, resolver disputas ou defender direitos.</p>
+
+    <h2>Segurança</h2>
+    <p>O MMPG Remote adota medidas técnicas proporcionais ao tipo de app e aos dados tratados, incluindo armazenamento local privado do Android, uso de criptografia para proteger a identidade técnica de pareamento sempre que aplicável, ausência de backend próprio recebendo dados de uso, ausência de SDKs de publicidade, analytics e rastreamento, minimização de dados e uso do Google Play Billing para pagamentos.</p>
+    <p>Nenhum sistema é absolutamente imune a falhas. Caso seja identificado incidente relevante envolvendo dados pessoais sob responsabilidade do MMPG Remote, serão adotadas as medidas cabíveis de investigação, mitigação e comunicação conforme a legislação aplicável.</p>
+
+    <h2>Transferências internacionais</h2>
+    <p>O app não envia dados pessoais para servidores próprios no Brasil ou no exterior. Serviços de terceiros, como Google Play, Google Payments, lojas de aplicativos, hospedagem do site, DNS, navegador ou infraestrutura web, podem processar dados em diferentes países conforme suas próprias políticas, contratos e bases legais.</p>
+
+    <h2 id="direitos">Direitos do usuário</h2>
+    <p>Dependendo da legislação aplicável, o usuário pode ter direitos como confirmar se há tratamento de dados pessoais, acessar dados, corrigir dados incompletos ou inexatos, solicitar anonimização, bloqueio ou eliminação, solicitar portabilidade, obter informações sobre compartilhamento, revogar consentimento, solicitar exclusão, opor-se a determinado tratamento e não sofrer discriminação pelo exercício de direitos de privacidade, quando previsto pela lei local.</p>
+    <p>Como o app não possui conta nem banco de dados próprio de usuários, muitas solicitações poderão ser atendidas orientando o usuário a remover dados locais no próprio aparelho ou a gerenciar compras diretamente na Conta Google / loja de aplicativos.</p>
+
+    <h2>Direitos específicos por região</h2>
+    <h3>Brasil - LGPD</h3>
+    <p>Usuários no Brasil podem exercer os direitos previstos na Lei Geral de Proteção de Dados Pessoais (Lei 13.709/2018), incluindo confirmação de tratamento, acesso, correção, eliminação, informação sobre compartilhamento e revisão de consentimento quando aplicável.</p>
+    <h3>União Europeia, Espaço Econômico Europeu e Reino Unido</h3>
+    <p>Quando o GDPR, UK GDPR ou norma equivalente for aplicável, usuários podem ter direitos de acesso, retificação, apagamento, restrição, oposição, portabilidade e retirada de consentimento. Também podem ter o direito de apresentar reclamação a uma autoridade local de proteção de dados.</p>
+    <h3>Califórnia e outras regiões dos Estados Unidos</h3>
+    <p>Quando leis estaduais de privacidade dos Estados Unidos forem aplicáveis, usuários podem ter direitos de saber, acessar, corrigir, excluir e optar por não ter dados vendidos ou compartilhados para publicidade comportamental. O MMPG Remote não vende dados pessoais e não compartilha dados para publicidade comportamental.</p>
+
+    <h2>Publicidade, venda de dados e rastreamento</h2>
+    <p>O MMPG Remote não exibe anúncios de terceiros, não usa identificadores de publicidade, não vende dados pessoais e não rastreia o usuário entre aplicativos, sites ou dispositivos.</p>
+    <p>Se no futuro forem adicionados publicidade, analytics, crash reporting, notificações push, contas de usuário, sincronização em nuvem, formulários ou qualquer recurso que altere esta prática, esta política deverá ser atualizada e, quando exigido, o usuário será informado ou consultado.</p>
+
+    <h2>Dados de diagnóstico e suporte</h2>
+    <p>O app pode exibir logs técnicos na própria interface para ajudar o usuário a entender o estado da conexão, pareamento ou compra. Esses logs são locais e não são enviados automaticamente ao desenvolvedor.</p>
+    <p>Se o usuário decidir enviar uma captura de tela, texto de erro, e-mail ou mensagem de suporte, esse envio será voluntário e poderá conter informações fornecidas pelo próprio usuário. Recomenda-se não enviar senhas, dados bancários, documentos ou informações sensíveis em pedidos de suporte.</p>
+
+    <h2>Segurança de Dados do Google Play</h2>
+    <p>Para fins de preenchimento da seção "Segurança dos dados" do Google Play, a prática atual do app é:</p>
+    <ul>
+      <li>coleta de dados pessoais pelo app: <strong>não</strong>;</li>
+      <li>compartilhamento de dados pessoais pelo app com terceiros: <strong>não</strong>;</li>
+      <li>dados criptografados em trânsito: aplicável ao Google Play Billing e a protocolos que suportam criptografia; alguns controles locais de TV podem depender de protocolos locais do fabricante sem TLS;</li>
+      <li>possibilidade de exclusão de dados: sim, por limpeza de dados do app, desinstalação, esquecimento de TV pareada ou solicitação de suporte quando houver dado fornecido por canal externo;</li>
+      <li>conta de usuário no app: <strong>não possui</strong>;</li>
+      <li>publicidade ou rastreamento: <strong>não possui</strong>.</li>
+    </ul>
+    <p>A declaração no Play Console deve sempre permanecer consistente com esta política e com o comportamento real do aplicativo.</p>
+
+    <h2>Alterações nesta política</h2>
+    <p>Esta política pode ser atualizada para refletir mudanças no app, no site, nas lojas de aplicativos, em requisitos legais ou em recursos futuros.</p>
+    <p>Quando houver alterações relevantes, a data de atualização no topo será revisada. O uso continuado do app após a publicação da versão atualizada indicará ciência da nova política, salvo quando a lei exigir outra forma de aviso ou consentimento.</p>
+
+    <h2>Contato</h2>
+    <p>Dúvidas, solicitações de privacidade, pedidos de exclusão ou exercício de direitos podem ser enviados por meio do site:</p>
+    <p><a href="https://mmpg.online">https://mmpg.online</a></p>
+
+    <footer>
+      <p>© MMPG Novais. Esta página corresponde à política pública do aplicativo MMPG Remote.</p>
+    </footer>
+  </main>
+</body>
+</html>

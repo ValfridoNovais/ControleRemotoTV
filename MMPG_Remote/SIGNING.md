@@ -44,8 +44,8 @@ Depois de copiar o conteúdo de `keystore.base64` para o secret, apague o arquiv
 
 ## 4. Build
 
-Execute manualmente o workflow `Build Signed Release APK` (aba Actions → workflow_dispatch).
+Execute manualmente o workflow `Build Signed Release (AAB + APK)` (aba Actions → workflow_dispatch).
 
-O workflow roda os testes unitários, valida que os 4 secrets estão presentes, decodifica o keystore apenas em um arquivo temporário no runner (`$RUNNER_TEMP`), compila e assina o release, verifica a assinatura com `apksigner` e, ao final (mesmo em caso de falha), apaga o keystore temporário.
+O workflow roda os testes unitários, valida que os 4 secrets estão presentes, decodifica o keystore apenas em um arquivo temporário no runner (`$RUNNER_TEMP`), compila e assina o release em dois formatos — `app-release.aab` (o que se envia ao Play Console) e `app-release.apk` (útil para instalar direto num aparelho e testar antes de enviar) —, verifica a assinatura de cada um (`apksigner` no APK, `jarsigner` no AAB) e, ao final (mesmo em caso de falha), apaga o keystore temporário.
 
 O keystore não deve ser commitado.
